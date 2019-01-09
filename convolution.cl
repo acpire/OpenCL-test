@@ -25,7 +25,7 @@ __kernel void convolution(__global uchar* image,const int width,const int height
 	}
 }
 
-__kernel void convolution_rgba(__global uchar4* image,const int width,const int height, __global uchar4* kernel_convolution,const int width_kernel,const int height_kernel, __global uchar4* result)
+__kernel void convolution_rgba(__global uchar4* image,const int width,const int height, __global float4* kernel_convolution,const int width_kernel,const int height_kernel, __global uchar4* result)
 {
     const int idx = get_global_id(0);
     const int idy = get_global_id(1);
@@ -41,14 +41,15 @@ __kernel void convolution_rgba(__global uchar4* image,const int width,const int 
 					for (int j = 0; j < width_kernel; j++){
 						const int index_y = (h + i - part_height_kernel);
 						const int index_x = (w + j - part_width_kernel);
-						sum += index_y >= 0 && index_y < height && index_x >= 0 && index_x < width ? convert_float4(image[index_y * width + index_x]) * convert_float4(kernel_convolution[i * width_kernel + j]) : 0.0f;
+						sum += index_y >= 0 && index_y < height && index_x >= 0 && index_x < width ? convert_float4_rtp(image[index_y * width + index_x]) * kernel_convolution[i * width_kernel + j] : 0.0f;
 					}
 				}
-				result[h * width +w] = convert_uchar4(sum / operations);
+				sum /= operations;
+				result[h * width +w] = convert_uchar4(sum);
 			}
 		}
 }
-__kernel void noise_rgba(__global uchar4* image,const int width,const int height, float mathematical_expectation, float standard_deviation  )
+__kernel void noise_rgba(__global uchar4* image,__global uchar4* noise_image, const int width,const int height, float mathematical_expectation, float standard_deviation  )
 {
     const int idx = get_global_id(0);
     const int idy = get_global_id(1);
@@ -69,10 +70,8 @@ __kernel void noise_rgba(__global uchar4* image,const int width,const int height
 		float part_two = ( tmp * tmp ) / (2.0f * stand_dev * stand_dev);
 		float part_three = native_exp(-part_two);
 		float result = part_one * part_three;
-		float4 noise = result * 255.0f;
-	//	noise -= min;
-	//	noise *= normalize;
-		image[i] += convert_uchar4(noise);
+		float4 noise = result * 10.0f;
+		noise_image[i] += convert_uchar4(noise);
 	}
 }
 

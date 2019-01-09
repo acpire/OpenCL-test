@@ -21,9 +21,15 @@
     <ClCompile Include="clDevice.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Lab_2.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clDevice.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Lab_2.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

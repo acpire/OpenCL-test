@@ -334,7 +334,7 @@ bool clDevice::clPushKernel(cl_char * text, size_t lengthText)
 	return true;
 }
 
-cl_bool clDevice::mallocBufferMemory(const void** data, size_t* lengthData, size_t numberArrays, size_t lengthType) {
+cl_uint clDevice::mallocBufferMemory(const void** data, size_t* lengthData, size_t numberArrays, size_t lengthType) {
 	ptrMemoryDevice = (cl_mem*)realloc(ptrMemoryDevice, (numberObjectMemory + numberArrays) * sizeof(cl_mem));
 	cl_int errors;
 	for (size_t i = 0; i < numberArrays; i++) {
@@ -345,18 +345,18 @@ cl_bool clDevice::mallocBufferMemory(const void** data, size_t* lengthData, size
 		CL_CHECK(errors, "clCreateBuffer");
 		if (errors) {
 			ptrMemoryDevice = (cl_mem*)realloc(ptrMemoryDevice, (numberObjectMemory) * sizeof(cl_mem));
-			return false;
+			return NULL;
 		}
 	}
 	//for (size_t i = 0; i < numberArrays; i++) {
 	//	CL_CHECK(clEnqueueWriteBuffer(*queue, ptrMemoryDevice[numberObjectMemory + i], CL_FALSE, 0, lengthType * lengthData[i], data[i], NULL, NULL, NULL), "clEnqueueWriteBuffer");
 	//}
 	numberObjectMemory += numberArrays;
-	return true;
+	return numberObjectMemory - numberArrays;
 }
 
 cl_bool clDevice::setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* index_kernel_buffer,
-	void* arguments, cl_uchar* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments) {
+	void* arguments, cl_uchar* typeArguments, cl_uint numberArguments, cl_uint* index_kernel_arguments) {
 	for (size_t i = 0; i < numberIndicesMemoryBuffer; i++) {
 		if (indicesMemoryBuffer[i] < numberObjectMemory)
 			CL_CHECK(clSetKernelArg(kernels[indexKernel], index_kernel_buffer[i], sizeof(ptrMemoryDevice[indicesMemoryBuffer[i]]), &ptrMemoryDevice[indicesMemoryBuffer[i]]), "clSetKernelArg");
@@ -368,8 +368,8 @@ cl_bool clDevice::setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer
 	size_t offset = 0;
 	cl_char* _arguments = (cl_char*)arguments;
 	for (size_t i = 0; i < numberArguments; i++) {
-		CL_CHECK(clSetKernelArg(kernels[indexKernel], index_kernel_arguments[i], typeArgubents[i], &_arguments[offset]), "clSetKernelArg");
-		offset += typeArgubents[i];
+		CL_CHECK(clSetKernelArg(kernels[indexKernel], index_kernel_arguments[i], typeArguments[i], &_arguments[offset]), "clSetKernelArg");
+		offset += typeArguments[i];
 	}
 	return true;
 }
@@ -392,7 +392,8 @@ cl_bool clDevice::readData(void** returnedData, cl_uint* indicesReadData, cl_uch
 	cl_char** hostData = (cl_char**)returnedData;
 	size_t offset = 0;
 	for (size_t i = 0; i < numberIndicesReadData; i++) {
-		CL_CHECK(clEnqueueReadBuffer(*queue, ptrMemoryDevice[indicesReadData[i]], CL_TRUE, 0, typeArgubentsReturnedData[i] * lengthWrite[i], hostData[offset], NULL, NULL, NULL), "clEnqueueReadBuffer");
+		if (indicesReadData[i] < numberObjectMemory)
+			CL_CHECK(clEnqueueReadBuffer(*queue, ptrMemoryDevice[indicesReadData[i]], CL_TRUE, 0, lengthWrite[i], hostData[offset], NULL, NULL, NULL), "clEnqueueReadBuffer");
 		offset += typeArgubentsReturnedData[i];
 	}
 	return true;

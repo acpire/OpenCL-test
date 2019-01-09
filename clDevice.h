@@ -1,11 +1,13 @@
 
+#pragma once
 
 #include "CL/cl.h"
 #include <malloc.h>
 #include <stdio.h>
 #include <corecrt_memcpy_s.h>
 #include <new>
-#pragma comment(lib, "x86_64/OpenCL.lib")
+//#pragma comment(lib, "x86_64/OpenCL.lib")
+#pragma comment(lib, "OpenCL.lib")
 #pragma warning(disable:4996)
 
 
@@ -86,12 +88,12 @@ class clDevice
 	cl_kernel* kernels;
 	size_t numberKernels;
 	size_t numberPrograms;
-	size_t numberObjectMemory;
+	cl_uint numberObjectMemory;
 public:
 	clDevice(clPlatform* platformData, cl_uint indexDevice);
 	bool clPushProgram(cl_char* text, size_t lengthText, const cl_char* options);
 	bool clPushKernel(cl_char * text, size_t lengthText);
-	cl_bool mallocBufferMemory(const void ** data, size_t * lengthData, size_t numberArrays, size_t lengthType);
+	cl_uint mallocBufferMemory(const void ** data, size_t * lengthData, size_t numberArrays, size_t lengthType);
 	cl_bool setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* index_kernel_buffer, void* arguments, cl_uchar* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments);
 	cl_bool startCalculate(cl_uint indexKernel, size_t globalWork[3]);
 	cl_bool readData(void ** returnedData, cl_uint * indicesReadData, cl_uchar * typeArgubentsReturnedData, cl_ulong * lengthWrite, cl_uint numberIndicesReadData);
