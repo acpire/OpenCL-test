@@ -40,5 +40,8 @@
     <None Include="convolution.cl">
       <Filter>Файлы ресурсов</Filter>
     </None>
+    <None Include="fourier_transform.cl">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
   </ItemGroup>
 </Project>

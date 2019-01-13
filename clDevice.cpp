@@ -183,8 +183,9 @@ void deviceInfo(cl_device_id device, cl_platform_info information, const cl_char
 	size_t length;
 	CL_CHECK(clGetDeviceInfo(device, information, NULL, NULL, &length), textInformation);
 	if (lengthData != length) {
-		*data = (cl_char*)malloc((length) * sizeof(cl_char));
+		*data = (cl_char*)calloc((length + 1), sizeof(cl_char));
 		CL_CHECK(clGetDeviceInfo(device, information, length, *data, NULL), textInformation);
+		printf("%s - %s\n", textInformation, *data);
 	}
 	else {
 		CL_CHECK(clGetDeviceInfo(device, information, length, &(*((cl_char*)data)), NULL), textInformation);
@@ -304,6 +305,7 @@ clDevice::clDevice(clPlatform* platformData, cl_uint indexDevice)
 
 bool clDevice::clPushProgram(cl_char * text, size_t lengthText, const cl_char* options)
 {
+	cl_uint number_kernels;
 	cl_int errorCode;
 	namesPrograms = (cl_char**)realloc(namesPrograms, (numberPrograms + 1) * sizeof(cl_char*));
 	namesPrograms[numberPrograms] = (cl_char*)malloc(lengthText * sizeof(cl_char));
@@ -311,10 +313,46 @@ bool clDevice::clPushProgram(cl_char * text, size_t lengthText, const cl_char* o
 	programDevice = (cl_program*)realloc(programDevice, (numberPrograms + 1) * sizeof(cl_program));
 	programDevice[numberPrograms] = clCreateProgramWithSource(*context, 1, (const char**)&text, NULL, &errorCode);
 	CL_CHECK(errorCode, "clCreateProgramWithSource");
-	CL_CHECK(clBuildProgram(*programDevice, 1, device, (const char*)options, pfnBuildProgram, (void*)device), "clBuildProgram");
+	CL_CHECK(clBuildProgram(programDevice[numberPrograms], 1, device, (const char*)options, pfnBuildProgram, (void*)device), "clBuildProgram");
+	CL_CHECK(clCreateKernelsInProgram(programDevice[numberPrograms], NULL, NULL, &number_kernels), "clCreateKernelsInProgram");
+	kernels = (cl_kernel*)realloc(kernels, (numberKernels + number_kernels) * sizeof(cl_kernel));
+	CL_CHECK(clCreateKernelsInProgram(programDevice[numberPrograms], number_kernels, kernels + numberKernels, NULL), "clCreateKernelsInProgram");
+	namesKernels = (cl_char**)realloc(namesKernels, (numberKernels + number_kernels) * sizeof(cl_char*));
+	kernelInfo = (kernelInformation*)realloc(kernelInfo, (numberKernels + number_kernels) * sizeof(kernelInformation));
+	printf("-----------------kernels---------------------\n");
+	for (size_t i = numberKernels; i < numberKernels + number_kernels; i++) {
+		cl_char* kernel_name = NULL;
+		size_t length_name_kernel;
+		CL_CHECK(clGetKernelInfo(kernels[i], CL_KERNEL_FUNCTION_NAME, NULL, NULL, &length_name_kernel), "clGetKernelInfo");
+		namesKernels[i] = (cl_char*)malloc((length_name_kernel + 1) * sizeof(cl_char));
+		CL_CHECK(clGetKernelInfo(kernels[i], CL_KERNEL_FUNCTION_NAME, length_name_kernel, namesKernels[i], &length_name_kernel), "clGetKernelInfo");
+		namesKernels[i][length_name_kernel] = 0;
+		CL_CHECK(clGetKernelWorkGroupInfo(kernels[i], *device, CL_KERNEL_COMPILE_WORK_GROUP_SIZE, sizeof(size_t[3]), &kernelInfo[ i].local_work_size, NULL), "clGetKernelWorkGroupInfo");
+		CL_CHECK(clGetKernelWorkGroupInfo(kernels[i], *device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &kernelInfo[ i].max_work_group_size, NULL), "clGetKernelWorkGroupInfo");
+		CL_CHECK(clGetKernelWorkGroupInfo(kernels[i], *device, CL_KERNEL_LOCAL_MEM_SIZE, sizeof(cl_ulong), &kernelInfo[ i].local_size, NULL), "clGetKernelWorkGroupInfo");
+		CL_CHECK(clGetKernelWorkGroupInfo(kernels[i], *device, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(size_t), &kernelInfo[ i].prefer_work_group_size, NULL), "clGetKernelWorkGroupInfo");
+		CL_CHECK(clGetKernelWorkGroupInfo(kernels[i], *device, CL_KERNEL_PRIVATE_MEM_SIZE, sizeof(cl_ulong), &kernelInfo[ i].private_memory, NULL), "clGetKernelWorkGroupInfo");
+		printf("index kernel : %zi; name kernel : %s \n", i, namesKernels[ i]);
+	}
+	printf("---------------------------------------------\n");
+	numberKernels += number_kernels;
 	numberPrograms++;
 	return true;
 }
+
+cl_int clDevice::findKernel(const cl_char* text, size_t length) {
+	bool find = false;
+	for (size_t i = 0; i < numberKernels; i++) {
+		for (size_t j = 0; j < length && namesKernels[i][j] != 0 && namesKernels[i][j] == text[j]; j++) {
+			if (text[j + 1] == 0 && namesKernels[i][j + 1] == 0)
+				find = true;
+		}
+		if (find)
+			return i;
+	}
+	return -1;
+}
+
 bool clDevice::clPushKernel(cl_char * text, size_t lengthText)
 {
 	cl_int errorCode;
@@ -368,12 +406,13 @@ cl_uint clDevice::mallocImageMemory(const void** data, size_t* height, size_t* w
 		if ((void*)data[i]) {
 			clImageFormat.image_channel_order = typeImage[i];
 			clImageFormat.image_channel_data_type = typeData[i];
-			ptrImageDevice[i] = clCreateImage2D(*context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, &clImageFormat, width[i], height[i], rowPitch[i], (void*)data[i], &errors);
+
+			ptrImageDevice[numberImageDevice + i] = clCreateImage2D(*context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, &clImageFormat, width[i], height[i], rowPitch[i], (void*)data[i], &errors);
 		}
 		else {
 			clImageFormat.image_channel_order = typeImage[i];
 			clImageFormat.image_channel_data_type = typeData[i];
-			ptrImageDevice[i] = clCreateImage2D(*context, CL_MEM_READ_WRITE, &clImageFormat, width[i], height[i], NULL, NULL, &errors);
+			ptrImageDevice[numberImageDevice + i] = clCreateImage2D(*context, CL_MEM_READ_WRITE, &clImageFormat, width[i], height[i], NULL, NULL, &errors);
 		}
 		CL_CHECK(errors, "clCreateImage2D");
 		if (errors) {
@@ -384,11 +423,11 @@ cl_uint clDevice::mallocImageMemory(const void** data, size_t* height, size_t* w
 	numberImageDevice += numberArrays;
 	return numberImageDevice - numberArrays;
 }
-cl_bool clDevice::setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer,
+cl_bool clDevice::setArguments(cl_uint index_kernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer,
 	void* arguments, cl_uchar* typeArguments, cl_uint numberArguments, cl_uint* index_kernel_arguments) {
 	for (size_t i = 0; i < numberIndicesMemoryBuffer; i++) {
 		if (indicesMemoryBuffer[i] < numberMemoryDevice)
-			CL_CHECK(clSetKernelArg(kernels[indexKernel], index_kernel_buffer[i], sizeof(ptrMemoryDevice[indicesMemoryBuffer[i]]), &ptrMemoryDevice[indicesMemoryBuffer[i]]), "clSetKernelArg");
+			CL_CHECK(clSetKernelArg(kernels[index_kernel], index_kernel_buffer[i], sizeof(ptrMemoryDevice[indicesMemoryBuffer[i]]), &ptrMemoryDevice[indicesMemoryBuffer[i]]), "clSetKernelArg");
 		else {
 			printf("Error index in clSetKernelArg");
 			return false;
@@ -396,7 +435,7 @@ cl_bool clDevice::setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer
 	}
 	for (size_t i = 0; i < numberIndicesMemoryImage; i++) {
 		if (indicesMemoryImage[i] < numberImageDevice)
-			CL_CHECK(clSetKernelArg(kernels[indexKernel], index_kernel_buffer[i], sizeof(ptrImageDevice[indicesMemoryImage[i]]), &ptrImageDevice[indicesMemoryImage[i]]), "clSetKernelArg");
+			CL_CHECK(clSetKernelArg(kernels[index_kernel], index_kernel_buffer[i], sizeof(ptrImageDevice[indicesMemoryImage[i]]), &ptrImageDevice[indicesMemoryImage[i]]), "clSetKernelArg");
 		else {
 			printf("Error index in clSetKernelArg");
 			return false;
@@ -405,28 +444,24 @@ cl_bool clDevice::setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer
 	size_t offset = 0;
 	cl_char* _arguments = (cl_char*)arguments;
 	for (size_t i = 0; i < numberArguments; i++) {
-		CL_CHECK(clSetKernelArg(kernels[indexKernel], index_kernel_arguments[i], typeArguments[i], &_arguments[offset]), "clSetKernelArg");
+		CL_CHECK(clSetKernelArg(kernels[index_kernel], index_kernel_arguments[i], typeArguments[i], &_arguments[offset]), "clSetKernelArg");
 		offset += typeArguments[i];
 	}
 	return true;
 }
 
-cl_bool clDevice::startCalculate(cl_uint indexKernel, size_t globalWork[3]) {
+cl_bool clDevice::startCalculate(cl_uint index_kernel, size_t globalWork[3]) {
 	cl_event kernelEvent;
-	size_t localWork[3] = { kernelInfo[indexKernel].prefer_work_group_size * 4, 1, 1 };
+	size_t x = sqrt(kernelInfo[index_kernel].max_work_group_size);
+	size_t y = kernelInfo[index_kernel].max_work_group_size / x;
+	size_t localWork[3] = { x, y, 1 };
 	if (globalWork[0] % localWork[0])
 		globalWork[0] += localWork[0] - globalWork[0] % localWork[0];
 	if (globalWork[1] % localWork[1])
 		globalWork[1] += localWork[1] - globalWork[1] % localWork[1];
 	if (globalWork[2] % localWork[2])
 		globalWork[2] += localWork[2] - globalWork[2] % localWork[2];
-	//localWork[0] = globalWork[0] / localWork[0] > kernelInfo[indexKernel].max_work_group_size ? globalWork[0] / kernelInfo[indexKernel].max_work_group_size + 1 : localWork[0];
-	//localWork[1] = globalWork[1] / localWork[1] > kernelInfo[indexKernel].max_work_group_size ? globalWork[1] / kernelInfo[indexKernel].max_work_group_size + 1 : localWork[1];
-	//localWork[2] = globalWork[2] / localWork[2] > kernelInfo[indexKernel].max_work_group_size ? globalWork[2] / kernelInfo[indexKernel].max_work_group_size + 1 : localWork[2];
-	//globalWork[0] = !(globalWork[0] % localWork[0]) ? globalWork[0] / localWork[0] : globalWork[0] / localWork[0] + 1;
-	//globalWork[1] = !(globalWork[1] % localWork[1]) ? globalWork[1] / localWork[1] : globalWork[1] / localWork[1] + 1;
-	//globalWork[2] = !(globalWork[2] % localWork[2]) ? globalWork[2] / localWork[2] : globalWork[2] / localWork[2] + 1;
-	CL_CHECK(clEnqueueNDRangeKernel(*queue, kernels[indexKernel], 2, NULL, globalWork, localWork, NULL, NULL, &kernelEvent), "clEnqueueNDRangeKernel");
+	CL_CHECK(clEnqueueNDRangeKernel(*queue, kernels[index_kernel], 2, NULL, globalWork, localWork, NULL, NULL, &kernelEvent), "clEnqueueNDRangeKernel");
 
 	cl_ulong time_start, time_end;
 	CL_CHECK(clWaitForEvents(1, &kernelEvent), "clWaitForEvents");
@@ -483,6 +518,8 @@ clDevice::~clDevice()
 	for (size_t i = 0; i < numberPrograms; i++)
 		clReleaseProgram(programDevice[i]),
 		free(namesPrograms[i]);
+	if (*context)
+		clReleaseContext(*context);
 
 	if (kernels) free(kernels);
 	if (programDevice) free(programDevice);

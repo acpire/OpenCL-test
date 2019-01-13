@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <corecrt_memcpy_s.h>
 #include <new>
-//#pragma comment(lib, "x86_64/OpenCL.lib")
-#pragma comment(lib, "OpenCL.lib")
+#pragma comment(lib, "x86_64/OpenCL.lib")
+//#pragma comment(lib, "OpenCL.lib")
 #pragma warning(disable:4996)
 
 
@@ -106,11 +106,12 @@ public:
 	bool clPushKernel(cl_char * text, size_t lengthText);
 	cl_uint mallocBufferMemory(const void ** data, size_t * lengthData, size_t numberArrays, size_t lengthType);
 	cl_uint mallocImageMemory(const void ** data, size_t * height, size_t * width, size_t* rowPitch, size_t numberArrays, size_t* typeImage, size_t* typeData);
-	cl_bool setArguments(cl_uint indexKernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer, void* arguments, cl_uchar* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments);
-	cl_bool startCalculate(cl_uint indexKernel, size_t globalWork[3]);
+	cl_bool setArguments(cl_uint index_kernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer, void* arguments, cl_uchar* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments);
+	cl_bool startCalculate(cl_uint index_kernel, size_t globalWork[3]);
 	cl_bool readBuffer(void ** returnedData, cl_uint * indicesReadData, cl_uchar * typeArgubentsReturnedData, cl_ulong * lengthWrite, cl_uint numberIndicesReadData);
 	cl_bool readImage(void** returnedData, cl_uint* indicesReadData, cl_uchar* typeArgubentsReturnedData, size_t* width, size_t* height, cl_uint numberIndicesReadData);
 	cl_char* getNameKernel(cl_uint index);
 	cl_char* getNameProgram(cl_uint index);
+	cl_int findKernel(const cl_char* text, size_t length);
 	~clDevice();
 };

@@ -1,45 +1,9 @@
 #include "Lab_2.h"
 
-void Lab_2::convolution_rgba_host(size_t index_kernel, clDevice* device, cl_uchar4* image, size_t width, size_t height, cl_float4* kernel, size_t width_kernel, size_t height_kernel) {
-	void* data[] = { (void*)image, (void*)kernel, NULL };
-	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint) };
-	size_t length_data[] = { height * width * sizeof(cl_uchar4), width_kernel * height_kernel * sizeof(cl_float4), height * width * sizeof(cl_uchar4) };
-	cl_uint indices_memory[3];
-	cl_uint index_kernel_buffer[] = { 0, 3, 6 };
-	cl_uint index_kernel_arguments[] = { 1, 2, 4, 5 };
-	size_t work_size[] = { width, height, 1 };
-	cl_uint arguments[] = { width,  height , width_kernel, height_kernel };
-	size_t indices = device->mallocBufferMemory((const void**)data, length_data, 3, sizeof(char));
-	indices_memory[0] = indices;
-	indices_memory[1] = indices + 1;
-	indices_memory[2] = indices + 2;
-	device->setArguments(index_kernel, indices_memory, 3, NULL, NULL, index_kernel_buffer, arguments, type_arguments, 4, index_kernel_arguments);
-	device->startCalculate(index_kernel, work_size);
-	number_buffers += 3;
-	length_last_buffer = 3;
-	const char* buffers[3] = { "image_buffer" + 0,"kernel_buffer" + 0, "convolution_image" + 0 };
-	const size_t length_buffers[] = { 14, 15, 19 };
-	if (types_buffers_OpenCL)
-		types_buffers_OpenCL = (cl_uchar**)realloc(types_buffers_OpenCL, number_buffers * sizeof(cl_uchar*));
-	else
-		types_buffers_OpenCL = (cl_uchar**)malloc(number_buffers * sizeof(cl_uchar*));
-
-	length_buffer_OpenCL = (size_t*)realloc(length_buffer_OpenCL, number_buffers * sizeof(size_t));
-	indices_buffer_OpenCL = (size_t*)realloc(indices_buffer_OpenCL, number_buffers * sizeof(size_t));
-	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
-	for (size_t i = number_buffers - 3, j = 0; i < number_buffers; i++, j++) {
-		types_buffers_OpenCL[i] = (cl_uchar*)malloc(length_buffers[i] * sizeof(char));
-
-		memcpy(types_buffers_OpenCL[i], buffers[i], length_buffers[i] * sizeof(char));
-		indices_buffer_OpenCL[i] = indices + i;
-		length_buffer_OpenCL[i] = length_buffers[i];
-		last_buffers_modify[j] = number_buffers - length_last_buffer + i;
-	}
-}
 void Lab_2::convolution_rgba_host_image(size_t index_kernel, clDevice* device, cl_uchar4* image, size_t width, size_t height, cl_float4* kernel, size_t width_kernel, size_t height_kernel) {
 	void* data[] = { (void*)image, (void*)kernel, NULL };
 	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint) };
-	size_t length_height_data[] = { height ,  height_kernel , height  };
+	size_t length_height_data[] = { height ,  height_kernel , height };
 	size_t length_width_data[] = { width , width_kernel , width };
 	size_t length_row_pitch_data[] = { width * sizeof(cl_uchar4), width_kernel * sizeof(cl_float4), width * sizeof(cl_uchar4) };
 	size_t type_image[] = { CL_RGBA, CL_RGBA, CL_RGBA };
@@ -59,93 +23,184 @@ void Lab_2::convolution_rgba_host_image(size_t index_kernel, clDevice* device, c
 	length_last_buffer = 3;
 	const char* buffers[3] = { "image_image2d" + 0,"kernel_image2d" + 0, "convolution_image2d" + 0 };
 	const size_t length_buffers[] = { 14, 15, 19 };
-	if (types_buffers_OpenCL)
-		types_buffers_OpenCL = (cl_uchar**)realloc(types_buffers_OpenCL, number_buffers * sizeof(cl_uchar*));
-	else
-		types_buffers_OpenCL = (cl_uchar**)malloc(number_buffers * sizeof(cl_uchar*));
-
-	length_buffer_OpenCL = (size_t*)realloc(length_buffer_OpenCL, number_buffers * sizeof(size_t));
-	indices_buffer_OpenCL = (size_t*)realloc(indices_buffer_OpenCL, number_buffers * sizeof(size_t));
-	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
-	for (size_t i = number_buffers - 3, j = 0; i < number_buffers; i++, j++) {
-		types_buffers_OpenCL[i] = (cl_uchar*)malloc(length_buffers[i] * sizeof(char));
-
-		memcpy(types_buffers_OpenCL[i], buffers[i], length_buffers[i] * sizeof(char));
-		indices_buffer_OpenCL[i] = indices + i;
-		length_buffer_OpenCL[i] = length_buffers[i];
-		last_buffers_modify[j] = number_buffers - length_last_buffer + i;
-	}
-}
-void Lab_2::convolution_rgba_device(size_t index_kernel, clDevice* device, size_t width, size_t height, size_t width_kernel, size_t height_kernel, cl_uint indices_buffers[3]) {
-	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint) };
-	cl_uint index_kernel_buffer[] = { 0, 3, 6 };
-	cl_uint index_kernel_arguments[] = { 1, 2, 4, 5 };
-	size_t work_size[] = { width, height, 1 };
-	cl_uint arguments[] = { width,  height , width_kernel, height_kernel };
-	device->setArguments(index_kernel, indices_buffers, 3, index_kernel_buffer, NULL, NULL, arguments, type_arguments, 4, index_kernel_arguments);
-	device->startCalculate(index_kernel, work_size);
-	length_last_buffer = 3;
-	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
-	for (size_t i = 0; i < 3; i++) {
-		last_buffers_modify[i] = indices_buffers[i];
-	}
-}
-
-void Lab_2::make_noise_rgba_host(size_t index_kernel, clDevice* device, cl_uchar4* image, size_t width, size_t height, float mathematical_expectation, float standard_deviation) {
-	void* data[] = { (void*)image, (void*)NULL };
-	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(float),  sizeof(float) };
-	size_t length_data[] = { height * width * sizeof(cl_uchar4), height * width * sizeof(cl_uchar4) };
-	cl_uint indices_memory[2];
-	cl_uint index_kernel_buffer[] = { 0, 1 };
-	cl_uint index_kernel_arguments[] = { 2, 3, 4, 5 };
-	size_t work_size[] = { width, height, 1 };
-	cl_uint arguments[] = { width,  height, *((cl_uint*)&mathematical_expectation), *((cl_uint*)&standard_deviation) };
-	size_t indices = device->mallocBufferMemory((const void**)data, length_data, 2, sizeof(char));
-	indices_memory[0] = indices;
-	indices_memory[1] = indices + 1;
-	device->setArguments(index_kernel, indices_memory, 2, NULL, NULL, index_kernel_buffer, arguments, type_arguments, 4, index_kernel_arguments);
-	device->startCalculate(index_kernel, work_size);
-	number_buffers += 2;
-	length_last_buffer = 2;
-	const char* buffers[2] = { "image_buffer" + 0, "noise_image_buffer" + 0 };
-	const size_t length_buffers[] = { 20 };
 	types_buffers_OpenCL = (cl_uchar**)realloc(types_buffers_OpenCL, number_buffers * sizeof(cl_uchar*));
 	length_buffer_OpenCL = (size_t*)realloc(length_buffer_OpenCL, number_buffers * sizeof(size_t));
 	indices_buffer_OpenCL = (size_t*)realloc(indices_buffer_OpenCL, number_buffers * sizeof(size_t));
 	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
-	for (size_t i = number_buffers - 2, j = 0; i < number_buffers; i++, j++) {
-		types_buffers_OpenCL[i] = (cl_uchar*)malloc(length_buffers[i] * sizeof(char));
-		memcpy(types_buffers_OpenCL[i], buffers[i], length_buffers[i] * sizeof(char));
-		indices_buffer_OpenCL[i] = indices + i;
-		length_buffer_OpenCL[i] = length_buffers[i];
-		last_buffers_modify[j] = number_buffers - length_last_buffer + i;
+	for (size_t i = number_buffers - 3, j = 0; i < number_buffers; i++, j++) {
+		types_buffers_OpenCL[i] = (cl_uchar*)malloc(length_buffers[j] * sizeof(char));
+
+		memcpy(types_buffers_OpenCL[i], buffers[j], length_buffers[j] * sizeof(char));
+		indices_buffer_OpenCL[i] = indices + j;
+		length_buffer_OpenCL[i] = length_buffers[j];
+		last_buffers_modify[j] = i;
+	}
+}
+void Lab_2::convert_float4_to_uchar4_image(size_t index_kernel, clDevice* device, size_t width, size_t height, cl_uint indices_images[2]) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint) };
+	cl_uint index_kernel_buffer[] = { 0, 1, };
+	cl_uint index_kernel_arguments[] = { 2, 3 };
+	size_t work_size[] = { width, height, 1 };
+	cl_uint arguments[] = { width,  height };
+	device->setArguments(index_kernel, NULL, NULL, indices_images, 2, index_kernel_buffer, arguments, type_arguments, 2, index_kernel_arguments);
+	device->startCalculate(index_kernel, work_size);
+	length_last_buffer = 2;
+	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
+	for (size_t j = 0; j < length_last_buffer; j++) {
+		last_buffers_modify[j] = indices_images[j];
+	}
+}
+void Lab_2::convolution_rgba_device(size_t index_kernel, clDevice* device, size_t width, size_t height, size_t width_kernel, size_t height_kernel, cl_uint indices_images[3]) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint) };
+	cl_uint index_kernel_buffer[] = { 0, 1, 2 };
+	cl_uint index_kernel_arguments[] = { 3, 4, 5, 6 };
+	size_t work_size[] = { width, height, 1 };
+	cl_uint arguments[] = { width,  height , width_kernel, height_kernel };
+	device->setArguments(index_kernel, NULL, NULL, indices_images, 3, index_kernel_buffer, arguments, type_arguments, 4, index_kernel_arguments);
+	device->startCalculate(index_kernel, work_size);
+	length_last_buffer = 3;
+	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
+	for (size_t j = 0; j < 3; j++) {
+		last_buffers_modify[j] = indices_images[j];
 	}
 }
 
-void Lab_2::make_noise_rgba_device(size_t index_kernel, clDevice* device, size_t width, size_t height, float mathematical_expectation, float standard_deviation, cl_uint indices_buffers) {
-	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(float),  sizeof(float) };
-	cl_uint index_kernel_buffer[] = { 0 };
-	cl_uint index_kernel_arguments[] = { 1, 2, 3, 4 };
-	size_t work_size[] = { width, height, 1 };
-	cl_uint arguments[] = { width,  height, *((cl_uint*)&mathematical_expectation), *((cl_uint*)&standard_deviation) };
-	device->setArguments(index_kernel, &indices_buffers, 1, NULL, NULL, index_kernel_buffer, arguments, type_arguments, 4, index_kernel_arguments);
-	device->startCalculate(index_kernel, work_size);
-	length_last_buffer = 1;
-	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
-	last_buffers_modify[0] = indices_buffers;
-}
-void Lab_2::fourier_transform_rgba_device(size_t index_kernel, clDevice* device, size_t width, size_t height, cl_uint indices_buffers[2]) {
+void Lab_2::make_noise_image_rgba_device(size_t index_kernel, clDevice* device, size_t width, size_t height, cl_uint indices_images[2]) {
 	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint) };
 	cl_uint index_kernel_buffer[] = { 0, 1 };
 	cl_uint index_kernel_arguments[] = { 2, 3 };
 	size_t work_size[] = { width, height, 1 };
 	cl_uint arguments[] = { width,  height };
-	device->setArguments(index_kernel, indices_buffers, 2, NULL, NULL, index_kernel_buffer, arguments, type_arguments, 2, index_kernel_arguments);
+	device->setArguments(index_kernel, NULL, NULL, indices_images, 2, index_kernel_buffer, arguments, type_arguments, sizeof(index_kernel_arguments) / sizeof(cl_uint), index_kernel_arguments);
 	device->startCalculate(index_kernel, work_size);
 	length_last_buffer = 2;
 	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
-	last_buffers_modify[0] = indices_buffers[0];
-	last_buffers_modify[1] = indices_buffers[1];
+	last_buffers_modify[0] = indices_images[0];
+	last_buffers_modify[1] = indices_images[1];
+}
+
+void Lab_2::divide_fourier_transform_rgba_image_device(size_t index_kernel, clDevice* device, size_t width, size_t height, size_t width_kernel, size_t height_kernel, cl_uint indices_images[6]) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint), sizeof(cl_uint),  sizeof(cl_uint) };
+	cl_uint index_kernel_buffer[] = { 0, 1, 2, 3, 4, 5 };
+	cl_uint index_kernel_arguments[] = { 6, 7, 8, 9 };
+	size_t work_size[] = { width, height, 1 };
+	cl_uint arguments[] = { width,  height, width_kernel, height_kernel };
+	device->setArguments(index_kernel, NULL, NULL, indices_images, 6, index_kernel_buffer, arguments, type_arguments, sizeof(index_kernel_arguments) / sizeof(cl_uint), index_kernel_arguments);
+	device->startCalculate(index_kernel, work_size);
+	length_last_buffer = 6;
+	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
+	for (size_t i = 0; i < length_last_buffer; i++)
+		last_buffers_modify[i] = indices_images[i];
+}
+
+void Lab_2::fourier_transform_rgba_image_device(size_t index_kernel, clDevice* device, size_t width, size_t height, cl_uint indices_images[3]) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint) };
+	cl_uint index_kernel_buffer[] = { 0, 1, 2 };
+	cl_uint index_kernel_arguments[] = { 3, 4 };
+	size_t work_size[] = { width, height, 1 };
+	cl_uint arguments[] = { width,  height };
+	device->setArguments(index_kernel, NULL, NULL, indices_images, 3, index_kernel_buffer, arguments, type_arguments, sizeof(index_kernel_arguments) / sizeof(cl_uint), index_kernel_arguments);
+	device->startCalculate(index_kernel, work_size);
+	length_last_buffer = 3;
+	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
+	last_buffers_modify[0] = indices_images[0];
+	last_buffers_modify[1] = indices_images[1];
+	last_buffers_modify[2] = indices_images[2];
+}
+
+void Lab_2::inverse_fourier_transform_rgba_image_device(size_t index_kernel, clDevice* device, size_t width, size_t height, cl_uint indices_images[3]) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint) };
+	cl_uint index_kernel_buffer[] = { 0, 1, 2 };
+	cl_uint index_kernel_arguments[] = { 3, 4 };
+	size_t work_size[] = { width, height, 1 };
+	cl_uint arguments[] = { width,  height };
+	device->setArguments(index_kernel, NULL, NULL, indices_images, 3, index_kernel_buffer, arguments, type_arguments, sizeof(index_kernel_arguments) / sizeof(cl_uint), index_kernel_arguments);
+	device->startCalculate(index_kernel, work_size);
+	length_last_buffer = 3;
+	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
+	last_buffers_modify[0] = indices_images[0];
+	last_buffers_modify[1] = indices_images[1];
+	last_buffers_modify[2] = indices_images[2];
+}
+
+cl_float4* Lab_2::inverse_matrix(cl_float4* matrix, size_t width, size_t height) {
+	//float det = 0.0f;
+//int l;
+//double determinant;
+//double sum11 = 1, sum12 = 0, sum21 = 1, sum22 = 0;
+//for (int i = 0; i < height; i++) {
+//	sum11 = 1;
+//	l = 2 * width - 1 - i;
+//	sum21 = 1;
+//	for (int j = 0; j < width; j++) {
+//		sum21 *= kernel[j * width + l % width].x;
+//		l--;
+//		sum11 *= kernel[j*width + (j + i) % (width)].x;
+//	}
+//	sum22 += sum21;
+//	sum12 += sum11;
+//}
+//determinant = sum12 - sum22;
+//size_t number_matrix = 0;
+//height = 4;
+//for (size_t i = 0, j = height; i < height - 2; i++, j--)
+//	number_matrix += j * j;
+//cl_float** A = (cl_float**)calloc(number_matrix, sizeof(cl_float*));
+//for (size_t level = 0, k = 0, size_matrix = height; level < height - 2; level++, size_matrix--)
+//	for (size_t level_matrix = 0; level_matrix < size_matrix *size_matrix; level_matrix++)
+//		A[k++] = (cl_float*)calloc((size_matrix - 1)*(size_matrix - 1), sizeof(cl_float));
+//if (determinant) {
+//	for (int h = 0; h < height; h++) {
+//		for (int w = 0; w < width; w++) {
+//			for (size_t level = 0, k = 0, size_matrix = height; level < height - 2; level++, size_matrix--)
+//				for (size_t level_matrix = 0, width_matrix = size_matrix - 1; level_matrix < size_matrix * size_matrix; level_matrix++, k++)
+//					for (size_t i = 0; i < width_matrix; i++) {
+//						for (size_t j = 0; j < width_matrix; j++) {
+//							A[k][i*width + j] = ;......................................
+//							.................................................
+//					}
+//		}
+//	}
+//}
+
+//sum /= width * height;
+//for (size_t i = 0; i < number_matrix; i++)
+//	free(A[i]);
+//free(A);
+	cl_float stack_inverse_matrix[] = { 1079.204236,-1280.472923,563.3703743,-542.8517522,312.5876733,-95.0592449,301.4978835,-211.8201197,281.8757206,-389.8347008,221.2658148,-405.8619612,272.0123509,236.2220432,-200.0677839,562.6148751,-1014.939339,469.5304903,-350.7180398,461.2502299,
+- 1741.680486,2465.283744,-1560.473901,1118.867537,-543.6481234,241.679635,-356.8918998,121.2072465,-254.6067705,312.6995557,-74.23812947,421.6264561,-136.2535866,-664.0275573,631.7840577,-1177.430812,1512.586803,-50.28616707,-481.9812649,-125.5425411,
+1235.062476,-2069.109696,1425.775599,-743.3189235,414.2624663,-259.4659574,160.4442338,-17.82619182,-21.37002428,177.5136894,-204.4152734,-100.0481793,-133.5368396,648.3109903,-712.0453605,964.9728375,-764.0722648,-640.5828711,1258.526129,-482.6100411,
+- 1083.307174,1566.603028,-791.8085298,473.0567971,-404.6270468,197.012472,-221.4218539,184.1278204,-12.80715277,-123.9538528,65.61963331,201.9323653,-43.14041207,-429.7751132,572.5492647,-724.2075498,586.5923481,224.6492014,-477.4470095,85.07443892,
+714.4461149,-1036.178588,725.475866,-606.2874015,361.5562962,-158.0187077,145.811338,6.083659134,-65.39646374,90.69674937,-96.2723563,-109.6507749,-29.48988957,388.5576687,-458.7089734,665.1946242,-557.9156911,-44.75880648,-45.37147578,271.7418068,
+166.0068711,-87.50403434,-167.5732328,126.4245916,-79.67756125,109.0096442,37.17219645,-124.4258923,98.92502244,-145.9562644,142.2613916,-121.8579795,158.3132045,-63.88579245,5.729191029,-102.1809716,22.37030146,2.551510519,259.6597025,-236.1131723,
+- 265.2408814,458.9930538,-353.2741233,170.4581942,-8.238208323,-42.08553079,39.71609627,-96.01744907,114.5378242,-96.49631462,63.00060073,-7.05743752,74.79259633,-206.0347004,256.0892219,-272.1180311,47.02565276,415.0765864,-501.2981351,179.6290484,
+- 129.0915029,87.10705089,-62.21012995,154.994926,-3.162120707,-60.385749,-67.41232975,-25.16981033,101.6187148,-36.50540042,81.66997049,-49.82750466,-38.74682954,-49.84318794,62.61460863,22.3671184,13.98882927,-7.750087444,-40.43668388,9.258130801,
+369.7567069,-425.0119456,173.5063553,-84.97499273,-173.5630925,216.3673688,34.46867273,174.4505773,-450.9330505,332.8932144,-278.2204878,247.9861884,-125.5678421,184.0351214,-241.7695806,105.6778004,166.137286,-466.6018204,406.9066621,-95.7799318,
+- 592.6254386,528.5394887,66.53369489,-76.18510707,245.618013,-313.1001604,-103.3438019,-47.58699476,375.8235268,-190.4949902,181.5183472,-228.9198467,12.30538546,-86.58138464,229.1108594,-75.00006815,0.801594868,68.13302468,-200.1552744,112.6596053,
+601.3396809,-572.8963996,105.5574959,-147.3488733,-131.9195769,283.3511424,66.65251332,102.4129614,-319.0453643,153.4833505,-281.4723206,283.0819883,-19.73044523,167.9117952,-300.4072577,153.6488032,-125.1786094,10.22317069,108.3388968,-21.44425519,
+- 598.078065,625.6749929,-225.4411529,255.737933,31.78777471,-211.8494573,-52.47065867,-98.7867911,284.4919212,-206.6552682,311.0767584,-244.396221,71.49146151,-193.7397972,254.345894,-229.8953853,78.71238366,257.3100178,-126.0310274,-128.2799993,
+570.9042872,-603.1366038,181.9818808,-204.143766,19.59447722,127.5525241,126.7411873,-70.86410656,-83.49222805,13.19252007,-51.35663004,22.88441565,50.88011219,86.46157044,-177.6489084,260.0309931,-263.1997603,-193.9372194,506.625154,-229.913907,
+38.81325814,-125.246743,141.7321075,-107.9829829,112.5347025,-52.6179184,-37.54026734,-8.915705128,62.56522189,-24.97416988,48.27012349,-56.28840583,-43.96369133,53.76163098,-5.659609912,13.2948679,19.15562598,138.0621028,-444.9522785,307.5441616,
+- 498.0412051,859.4603051,-683.6150983,517.5755286,-344.579458,110.1308557,-15.21627824,23.403548,-67.64024831,64.64071214,-69.58628082,140.6636649,6.761757784,-257.4099127,279.7298601,-395.2620412,484.6636824,-6.699957174,-420.1544453,226.1125357,
+620.6994271,-1022.099444,692.1400548,-427.2041985,329.903217,-197.2355875,29.79140145,112.9120173,-113.6970474,154.4068173,-153.9791064,-39.96465948,-41.51440432,289.7732827,-319.7021721,497.9184741,-421.3787045,-254.7792465,416.9685181,-58.11410423,
+- 1153.936873,1453.055083,-572.0456147,333.4793544,-192.2369993,101.0336757,-281.9547321,28.74000613,162.1952141,-38.9361151,70.60490373,15.52080716,-41.11208738,-239.5167127,453.9824326,-637.7179216,354.8992158,431.9607415,-438.1719307,-10.29335759,
+420.1445039,-285.2542921,-192.6695732,11.44500431,89.41483423,-45.09183192,247.7106393,-115.415402,-21.87449126,-276.1329372,295.0570002,-27.27273703,-43.59700502,103.6266815,-142.5919117,65.84659018,86.34259322,-530.5285938,806.1357184,-391.6518446,
+1558.154294,-2578.229318,1944.855583,-1050.513809,87.93104608,174.2221947,189.8012629,-40.49765972,-139.74524,218.4047189,-419.7893071,30.65776959,271.5686727,348.6765162,-979.1816984,1290.688567,-1188.784194,190.1188559,604.629816,-344.2126099,
+- 1348.132206,2203.178142,-1636.752885,939.7567873,-118.7520852,-144.673459,-225.4331399,56.27494943,135.909263,-46.81277688,215.6018925,-47.18112534,-178.437806,-383.8906195,926.1899168,-1094.068222,978.7446763,144.2176338,-1198.894596,710.5362228 };
+	cl_float4* inverse_matrix = (cl_float4*)malloc(width * height * sizeof(cl_float4));
+	cl_double sum = 0.0;
+	for (size_t i = 0; i < width * height; i++) {
+		sum += (stack_inverse_matrix[i]);
+	}
+	sum = (width * height) / sum;
+
+	for (size_t i = 0; i < width * height; i++) {
+		inverse_matrix[i].x = stack_inverse_matrix[i] * sum;
+		inverse_matrix[i].y = stack_inverse_matrix[i] * sum;
+		inverse_matrix[i].z = stack_inverse_matrix[i] * sum;
+		inverse_matrix[i].w = stack_inverse_matrix[i] * sum;
+	}
+	return inverse_matrix;
 }
 cl_float4* Lab_2::make_kernel_normal_distribution(size_t width, size_t height) {
 	cl_float4* kernel = (cl_float4*)malloc(width * height * sizeof(cl_float4));
@@ -176,9 +231,10 @@ cl_float4* Lab_2::make_kernel_normal_distribution(size_t width, size_t height) {
 	div = sqrt(sum_x * sum_y);
 	correlation /= div;
 	if (correlation == 1)
-		correlation -= 0.000001f;
+		correlation -= 0.000001f; 
 	float C = 1.0f / (2.0f * CL_M_PI * D_1 * D_2 * sqrtf(1.0f - correlation * correlation));
 	cl_double sum = 0;
+	cl_float max = 0;
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
 			float Q = (1.0f / (2.0f * 1.0f - correlation * correlation)) * ((powf(x * x_step - math_1, 2) / D_1) + (powf(y * y_step - math_2, 2) / D_2) + (2.0f * correlation * (x * x_step - math_1) * (y * y_step - math_2) / D_1 * D_2));
@@ -193,35 +249,127 @@ cl_float4* Lab_2::make_kernel_normal_distribution(size_t width, size_t height) {
 		kernel[i].y *= sum;
 		kernel[i].z *= sum;
 		kernel[i].w *= sum;
+		//if (i%width == 0)
+		//	printf("%\n");
+		//printf("%f ", kernel[i].w);
 	}
+
 	return kernel;
 }
 
-float fract(float n) {
-	return n - floor(n);
+size_t Lab_2::mallocMemoryImage(clDevice* device, const void* ptr, size_t width, size_t height, size_t type_data, size_t type_image) {
+	size_t _type_image[] = { type_image };
+	size_t _type_data[] = { type_data };
+	size_t length_row_pitch_data[1];
+	size_t length_height_data[] = { height };
+	size_t length_width_data[] = { width };
+	if (type_data == CL_FLOAT && type_image == CL_RGBA)
+		length_row_pitch_data[0] = { width * sizeof(cl_float4) };
+	if (type_data == CL_UNORM_INT8 && type_image == CL_RGBA)
+		length_row_pitch_data[0] = { width * sizeof(cl_uchar4) };
+	else if (type_data == CL_UNSIGNED_INT8 && type_image == CL_RGBA)
+		length_row_pitch_data[0] = { width * sizeof(cl_uchar4) };
+	size_t _indices = device->mallocImageMemory(&ptr, length_height_data, length_width_data, length_row_pitch_data, 1, &_type_image[0], &_type_data[0]);
+	const char* buffers[1] = { "image2d" + 0 };
+	const size_t length_buffers[] = { 9 };
+	number_buffers += 1;
+	length_last_buffer = 1;
+	types_buffers_OpenCL = (cl_uchar**)realloc(types_buffers_OpenCL, number_buffers * sizeof(cl_uchar*));
+	length_buffer_OpenCL = (size_t*)realloc(length_buffer_OpenCL, number_buffers * sizeof(size_t));
+	indices_buffer_OpenCL = (size_t*)realloc(indices_buffer_OpenCL, number_buffers * sizeof(size_t));
+	last_buffers_modify = (cl_uint*)realloc(last_buffers_modify, length_last_buffer * sizeof(cl_uint));
+	for (size_t i = number_buffers - 1, j = 0; i < number_buffers; i++, j++) {
+		types_buffers_OpenCL[i] = (cl_uchar*)malloc(length_buffers[j] * sizeof(char));
+		memcpy(types_buffers_OpenCL[i], buffers[j], length_buffers[j] * sizeof(char));
+		indices_buffer_OpenCL[i] = _indices + j;
+		length_buffer_OpenCL[i] = length_buffers[j];
+		last_buffers_modify[j] = i;
+	}
+	return _indices;
 }
-static float noise3D(float x, float y, float z) {
-	return fract(sin(x*112.9898f + y * 179.233f + z * 237.212f) * 43758.5453f);
+void Lab_2::readImage(clDevice* device, void* returnData, size_t width_image, size_t height_image, cl_uint index_buffer) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint) };
+	device->readImage((void**)&returnData, &index_buffer, type_arguments, &width_image, &height_image, 1);
 }
-
-Lab_2::Lab_2(clDevice* device, cl_uchar4* image, size_t width, size_t height, size_t* indices_kernels, size_t number_kernels)
+Lab_2::Lab_2(clDevice* device, cl_uchar4* image, size_t width, size_t height)
 {
+
 	for (size_t i = 0; i < sizeof(*this); i++)
 		((cl_char*)this)[i] = 0;
+	const cl_char convolution_image[] = "convolution_image_rgba";
+	const cl_char noise_image[] = "noise_image_rgba";
+	const cl_char fourier_transform_image[] = "fourier_transform_rgba_image";
+	const cl_char inverse_fourier_transform_image[] = "inverse_fourier_transform_rgba_image";
+	const cl_char inverse_data_image_rgba[] = "inverse_data_image_rgba";
+	const cl_char div_fourier_image_rgba_image[] = "div_fourier_image_rgba_image";
+	const cl_char mul_fourier_image_rgba_image[] = "mul_fourier_image_rgba_image";
+	const cl_char convert_float4_to_uchar4_rgba_image[] = "convert_float4_to_uchar4_image_rgba";
+	const cl_char fourier_transform_float_rgba_image[] = "fourier_transform_float_rgba_image";
+	//cl_int convolution_kernel_index = device->findKernel(convolution_image, sizeof("convolution_image_rgba"));
+	cl_int convolution_kernel_index = device->findKernel((const cl_char*)"convolution_f_image_rgba", sizeof("convolution_f_image_rgba"));
+	cl_int noise_kernel_index = device->findKernel(noise_image, sizeof("noise_image_rgba"));
+	cl_int fourier_transform_kernel_index = device->findKernel(fourier_transform_image, sizeof("fourier_transform_rgba_image"));
+	cl_int inverse_fourier_transform_kernel_index = device->findKernel(inverse_fourier_transform_image, sizeof("inverse_fourier_transform_rgba_image"));
+	cl_int div_fourier_kernel_index = device->findKernel(div_fourier_image_rgba_image, sizeof("div_fourier_image_rgba_image"));
+	cl_int mul_fourier_kernel_index = device->findKernel(mul_fourier_image_rgba_image, sizeof("mul_fourier_image_rgba_image"));
+	cl_int convert_float4_to_uchar4_kernel_index = device->findKernel(convert_float4_to_uchar4_rgba_image, sizeof("convert_float4_to_uchar4_image_rgba"));
+	cl_int fourier_transform_float4_kernel_index = device->findKernel(fourier_transform_float_rgba_image, sizeof("fourier_transform_float_rgba_image"));
+
+	size_t width_kernel = 20;
+	size_t height_kernel = 20;
+
+	cl_float4* kernel = make_kernel_normal_distribution(width_kernel, height_kernel);
+	cl_float4* inverse_kernel = inverse_matrix(NULL, width_kernel, height_kernel);
+
+	size_t real_data_gpu = mallocMemoryImage(device, NULL, width, height, CL_FLOAT, CL_RGBA);
+	size_t imagine_data_gpu = mallocMemoryImage(device, NULL, width, height, CL_FLOAT, CL_RGBA);
+	size_t real_kernel_gpu = mallocMemoryImage(device, NULL, width, height, CL_FLOAT, CL_RGBA);
+	size_t imagine_kernel_gpu = mallocMemoryImage(device, NULL, width, height, CL_FLOAT, CL_RGBA);
+	size_t real_result_image_gpu = mallocMemoryImage(device, NULL, width, height, CL_FLOAT, CL_RGBA);
+	size_t imagine_result_image_gpu = mallocMemoryImage(device, NULL, width, height, CL_FLOAT, CL_RGBA);
+	size_t inv_kernel_gpu = mallocMemoryImage(device, inverse_kernel, width_kernel, height_kernel, CL_FLOAT, CL_RGBA);
+	size_t kernel_gpu = mallocMemoryImage(device, kernel, width_kernel, height_kernel, CL_FLOAT, CL_RGBA);
+	size_t image_gpu = mallocMemoryImage(device, image, width, height, CL_UNORM_INT8, CL_RGBA);
+	size_t result_image_gpu = mallocMemoryImage(device, NULL, width, height, CL_UNORM_INT8, CL_RGBA);
+	cl_uint indices[6] = { image_gpu, kernel_gpu, result_image_gpu };
+	convolution_rgba_device(convolution_kernel_index, device, width, height, width_kernel, height_kernel, indices);
+
+	//indices[0] = result_image_gpu;
+	//indices[1] = image_gpu;
+
+	//make_noise_image_rgba_device(noise_kernel_index, device, width, height, indices);
 	
-	cl_float4* kernel = make_kernel_normal_distribution(40, 40);
-	cl_uchar type_arguments[] = { sizeof(cl_uint) };
-	size_t length_data[] = { height * width * sizeof(cl_uchar4) };
-	size_t width_image[] = { width  };
-	size_t height_image[] = { height  };
-	convolution_rgba_host_image(3, device, image, width, height, kernel, 40, 40);
-	//convolution_rgba_host(0, device, image, width, height, kernel, 40, 40);
-	//make_noise_rgba_device(1, device, width, height, 0, 0, last_buffers_modify[length_last_buffer - 1]);
-	cl_uint indices[2] = { indices_buffer_OpenCL[2], indices_buffer_OpenCL[0] };
-	//fourier_transform_rgba_device(2, device, width, height, indices);
-	device->readImage((void**)&image, &last_buffers_modify[length_last_buffer - 1], type_arguments, width_image, height_image, 1);
-	//device->readBuffer((void**)&image, &last_buffers_modify[length_last_buffer - 1], type_arguments, length_data, 1);
+	indices[0] = result_image_gpu;
+	indices[1] = inv_kernel_gpu;
+	indices[2] = image_gpu;
+	convolution_rgba_device(convolution_kernel_index, device, width, height, width_kernel, height_kernel, indices);
+	//indices[0] = result_image_gpu;
+	//indices[1] = real_data_gpu;
+	//indices[2] = imagine_data_gpu;
+	//fourier_transform_rgba_image_device(fourier_transform_kernel_index, device, width, height, indices);
+	//indices[0] = inv_kernel_gpu;
+	//indices[1] = real_kernel_gpu;
+	//indices[2] = imagine_kernel_gpu;
+	//fourier_transform_rgba_image_device(fourier_transform_float4_kernel_index, device, width, height, indices);
+	//indices[0] = real_data_gpu;
+	//indices[1] = imagine_data_gpu;
+	//indices[2] = real_kernel_gpu;
+	//indices[3] = imagine_kernel_gpu;
+	//indices[4] = real_result_image_gpu;
+	//indices[5] = imagine_result_image_gpu;
+	//divide_fourier_transform_rgba_image_device(mul_fourier_kernel_index, device, width, height, width_kernel, height_kernel, indices);
+	//indices[0] = real_result_image_gpu;
+	//indices[1] = imagine_result_image_gpu;
+	//indices[2] = result_image_gpu;
+	//inverse_fourier_transform_rgba_image_device(inverse_fourier_transform_kernel_index, device, width, height, indices);
+	indices[0] = imagine_data_gpu;
+	//indices[1] = image_gpu;
+	//convert_float4_to_uchar4_image(convert_float4_to_uchar4_kernel_index, device, width, height, indices);
+
+	readImage(device, image, width, height, result_image_gpu);
+
 	free(kernel);
+	//free(inverse_kernel);
 }
 
 Lab_2::~Lab_2()
