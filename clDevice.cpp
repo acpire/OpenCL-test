@@ -423,6 +423,48 @@ cl_uint clDevice::mallocImageMemory(const void** data, size_t* height, size_t* w
 	numberImageDevice += numberArrays;
 	return numberImageDevice - numberArrays;
 }
+
+
+void clDevice::callOpenclFunction(size_t index_kernel, cl_uint* indices_images, cl_uint* indices_arguments, size_t number_images, size_t number_arguments) {
+	cl_uchar type_arguments[] = { sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint),  sizeof(cl_uint) };
+	cl_uint* index_kernel_buffer = (cl_uint*)_alloca(number_images * sizeof(cl_uint));
+	cl_uint* index_kernel_arguments = (cl_uint*)_alloca(number_arguments * sizeof(cl_uint));
+	cl_uint* arguments = (cl_uint*)_alloca(number_arguments * sizeof(cl_uint));
+	size_t i = 0;
+	for (; i < number_images; i++)
+		index_kernel_buffer[i] = i;
+	for (size_t j = 0; i < number_images + number_arguments; i++) {
+		index_kernel_arguments[j++] = i;
+	}
+	i = 0;
+	for (; i < number_arguments; i++)
+		arguments[i] = indices_arguments[i];
+	size_t work_size[] = { indices_arguments[0], indices_arguments[1], 1 };
+	this->setArguments(index_kernel, NULL, NULL, indices_images, number_images, index_kernel_buffer, arguments, type_arguments, number_arguments, index_kernel_arguments);
+	this->startCalculate(index_kernel, work_size);
+
+}
+
+
+bool clDevice::freeImageMemory(size_t index_image) {
+	if (index_image < numberImageDevice) {
+		CL_CHECK(clReleaseMemObject(ptrImageDevice[index_image]), "clReleaseMemObject");
+		if (index_image == numberImageDevice - 1) {
+			numberImageDevice--;
+			ptrImageDevice = (cl_mem*)realloc(ptrImageDevice, (numberImageDevice) * sizeof(cl_mem));
+		}
+		else {
+			cl_mem* tmp_objects = (cl_mem*)malloc((numberImageDevice - index_image) * sizeof(cl_mem));
+			memcpy(tmp_objects, ptrImageDevice + index_image + 1, (numberImageDevice- index_image) * sizeof(cl_mem));
+			memcpy(ptrImageDevice + index_image, tmp_objects, (numberImageDevice - index_image) * sizeof(cl_mem));
+			numberImageDevice--;
+			ptrImageDevice = (cl_mem*)realloc(ptrImageDevice, (numberImageDevice) * sizeof(cl_mem));
+			free(tmp_objects);
+		}
+		return true;
+	}
+	return false;
+}
 cl_bool clDevice::setArguments(cl_uint index_kernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer,
 	void* arguments, cl_uchar* typeArguments, cl_uint numberArguments, cl_uint* index_kernel_arguments) {
 	for (size_t i = 0; i < numberIndicesMemoryBuffer; i++) {

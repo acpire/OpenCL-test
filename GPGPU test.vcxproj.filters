@@ -24,12 +24,24 @@
     <ClCompile Include="Lab_2.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Wiener_filter.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="MakeNoise.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clDevice.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Lab_2.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Wiener_filter.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="MakeNoise.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,6 +53,9 @@
       <Filter>Файлы ресурсов</Filter>
     </None>
     <None Include="fourier_transform.cl">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="filters.cl">
       <Filter>Файлы ресурсов</Filter>
     </None>
   </ItemGroup>

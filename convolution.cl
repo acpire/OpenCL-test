@@ -8,7 +8,7 @@ static float noise3D(float x, float y, float z) {
 //static float erf(float x) {
 //	return 1.0f - (1.0f)/pow(1.0f + 0.278393f*x + 0.230389*x*x+0.000972f*x*x*x+0.078108f*x*x*x*x, 4);
 //}
-__kernel void noise_image_rgba(read_only image2d_t read_image, write_only image2d_t write_image, const int width,const int height  )
+__kernel void noise_image_rgba(read_only image2d_t read_image, write_only image2d_t write_image, const int width,const int height  )  //Box–Muller
 {
 
     const int idx = get_global_id(0);
@@ -16,8 +16,14 @@ __kernel void noise_image_rgba(read_only image2d_t read_image, write_only image2
     const int stride_x = get_global_size(0);
     const int stride_y = get_global_size(1);
 
-	float math = 0.0f;
-	float D = 0.2f;
+	float4 math = 0.0f;
+	float4 sigma = 0.2f;
+	float4 result;
+	float4 z1;
+	bool generate  = false;
+	float4 u1, u2;
+	float4 z0;
+	float two_pi = 2.0f*3.14159265358979323846f;
 	for (size_t y = idy; y < height; y+=stride_y) {
 		for (size_t x = idx; x < width; x+=stride_x) {
 			float vector_x  = convert_float(x+1);
@@ -26,10 +32,22 @@ __kernel void noise_image_rgba(read_only image2d_t read_image, write_only image2
 			float random_number_x = noise3D(vector_x, vector_y, vector_z);
 			float random_number_y = noise3D(vector_y, vector_z, vector_x);
 			float random_number_z = noise3D(vector_z, vector_x, vector_y);
-			float4 random_number = 1.0f - 2.0f * (float4)(random_number_x, random_number_y, random_number_z, 0.0f);
-			random_number =  (erf((random_number - math) / sqrt(2.0f * D))) ;
+			float4 random_number = (float4)(random_number_x, random_number_y, random_number_z, 0.0f);
+
+			generate = !generate;
+
+			if (!generate) {
+				result = z1 * sigma + math;
+			}
+			else {
+				u1 = random_number;
+				u2 = random_number;
+				z0 = sqrt(-2.0f * log(u1)) * cos(two_pi * u2);
+				z1 = sqrt(-2.0f * log(u1)) * sin(two_pi * u2);
+				result = z0 * sigma + math;
+			}
 			float4 data_image = read_imagef(read_image, (int2)(x ,  y));
-			write_imagef(write_image, (int2)(x ,  y), (data_image + random_number));
+			write_imagef(write_image, (int2)(x ,  y), (data_image + result));
 		}
 	}
 }
@@ -43,6 +61,7 @@ __kernel void convert_float4_to_uchar4_image_rgba(read_only image2d_t image, wri
 	for (int h = idy; h < height ; h += stride_y){
 		for (int w = idx ; w <  width ; w += stride_x){
 			float4 data_image = read_imagef(image, (int2)(w, h));
+		//	printf("%v4f\n", data_image);
 			write_imageui(image_write, (int2)(w ,  h), convert_uint4(data_image));
 		}
 	}

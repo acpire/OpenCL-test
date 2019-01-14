@@ -101,9 +101,11 @@ class clDevice
 	cl_uint numberMemoryDevice;
 	cl_uint numberImageDevice;
 public:
+	bool freeImageMemory(size_t index_image);
 	clDevice(clPlatform* platformData, cl_uint indexDevice);
 	bool clPushProgram(cl_char* text, size_t lengthText, const cl_char* options);
 	bool clPushKernel(cl_char * text, size_t lengthText);
+	void callOpenclFunction(size_t index_kernel, cl_uint* indices_images, cl_uint* indices_arguments, size_t number_images, size_t number_arguments);
 	cl_uint mallocBufferMemory(const void ** data, size_t * lengthData, size_t numberArrays, size_t lengthType);
 	cl_uint mallocImageMemory(const void ** data, size_t * height, size_t * width, size_t* rowPitch, size_t numberArrays, size_t* typeImage, size_t* typeData);
 	cl_bool setArguments(cl_uint index_kernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer, void* arguments, cl_uchar* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments);

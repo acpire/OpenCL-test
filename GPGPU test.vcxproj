@@ -150,14 +150,19 @@
     <ClCompile Include="clDevice.cpp" />
     <ClCompile Include="GPGPU test.cpp" />
     <ClCompile Include="Lab_2.cpp" />
+    <ClCompile Include="MakeNoise.cpp" />
+    <ClCompile Include="Wiener_filter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clDevice.h" />
     <ClInclude Include="Lab_2.h" />
+    <ClInclude Include="MakeNoise.h" />
+    <ClInclude Include="Wiener_filter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="clCode.cl" />
     <None Include="convolution.cl" />
+    <None Include="filters.cl" />
     <None Include="fourier_transform.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
