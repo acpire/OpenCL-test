@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <corecrt_memcpy_s.h>
 #include <new>
-#pragma comment(lib, "x86_64/OpenCL.lib")
-//#pragma comment(lib, "OpenCL.lib")
+//#pragma comment(lib, "x86_64/OpenCL.lib")
+#pragma comment(lib, "OpenCL.lib")
 #pragma warning(disable:4996)
 
 
@@ -82,7 +82,6 @@ class clDevice
 {
 
 	cl_char* profileVersionNameVendorExtensions[5];
-	structDeviceInfo DeviceInfo;
 
 	cl_platform_id* platform;
 	cl_context* context;
@@ -101,14 +100,17 @@ class clDevice
 	cl_uint numberMemoryDevice;
 	cl_uint numberImageDevice;
 public:
+	structDeviceInfo DeviceInfo;
 	bool freeImageMemory(size_t index_image);
 	clDevice(clPlatform* platformData, cl_uint indexDevice);
 	bool clPushProgram(cl_char* text, size_t lengthText, const cl_char* options);
-	bool clPushKernel(cl_char * text, size_t lengthText);
-	void callOpenclFunction(size_t index_kernel, cl_uint* indices_images, cl_uint* indices_arguments, size_t number_images, size_t number_arguments);
+	bool clPushKernel(cl_char * text, size_t lengthText); 
+	void callOpenclFunction(size_t index_kernel, cl_uint* indices_images, cl_char* indices_arguments, cl_int* size_indices_arguments, size_t number_images, size_t number_arguments);
+	cl_bool copy2DImage(cl_uint image_src, cl_uint image_dst, size_t width, size_t height);
+
 	cl_uint mallocBufferMemory(const void ** data, size_t * lengthData, size_t numberArrays, size_t lengthType);
 	cl_uint mallocImageMemory(const void ** data, size_t * height, size_t * width, size_t* rowPitch, size_t numberArrays, size_t* typeImage, size_t* typeData);
-	cl_bool setArguments(cl_uint index_kernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer, void* arguments, cl_uchar* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments);
+	cl_bool setArguments(cl_uint index_kernel, cl_uint* indicesMemoryBuffer, cl_uint numberIndicesMemoryBuffer, cl_uint* indicesMemoryImage, cl_uint numberIndicesMemoryImage, cl_uint* index_kernel_buffer, void* arguments, cl_int* typeArgubents, cl_uint numberArguments, cl_uint* index_kernel_arguments);
 	cl_bool startCalculate(cl_uint index_kernel, size_t globalWork[3]);
 	cl_bool readBuffer(void ** returnedData, cl_uint * indicesReadData, cl_uchar * typeArgubentsReturnedData, cl_ulong * lengthWrite, cl_uint numberIndicesReadData);
 	cl_bool readImage(void** returnedData, cl_uint* indicesReadData, cl_uchar* typeArgubentsReturnedData, size_t* width, size_t* height, cl_uint numberIndicesReadData);

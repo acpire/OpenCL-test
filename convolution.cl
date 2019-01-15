@@ -1,6 +1,5 @@
 R"===(
 
-#pragma OPENCL EXTENSION cl_amd_printf: enable  
 static float noise3D(float x, float y, float z) {
     float ptr = 0.0f;
 	return fract(sin(x*112.9898f + y * 179.233f + z * 237.212f) * 43758.5453f, &ptr);
@@ -61,8 +60,9 @@ __kernel void convert_float4_to_uchar4_image_rgba(read_only image2d_t image, wri
 	for (int h = idy; h < height ; h += stride_y){
 		for (int w = idx ; w <  width ; w += stride_x){
 			float4 data_image = read_imagef(image, (int2)(w, h));
-		//	printf("%v4f\n", data_image);
-			write_imageui(image_write, (int2)(w ,  h), convert_uint4(data_image));
+//data_image = 1.0f;
+		printf("%v4f\n", data_image);
+			write_imagef(image_write, (int2)(w ,  h), data_image);
 		}
 	}
 }
@@ -109,7 +109,6 @@ __kernel void convolution_f_image_rgba(read_only image2d_t image, read_only imag
 				float index_image_x = w + part_size_kernel_x;
 				for (float j = 0.0f; j < 1.0f; j+=step_kernel_x){
 					const float4 data_image = read_imagef(image, smp, (float2)(index_image_x, index_image_y));
-					
 					const float4 data_kernel = read_imagef(kernel_convolution, smp, (float2)(j, i));
 					sum += data_image * data_kernel;
 					index_image_x += step_image_x;
@@ -117,8 +116,6 @@ __kernel void convolution_f_image_rgba(read_only image2d_t image, read_only imag
 				index_image_y += step_image_y;
 			}
 			sum *= operations;
-			//float4 data_image =read_imagef(image, smp, (float2)(w, h));
-			//printf("%f\n" data_image.x );
 			write_imagef(image_write, int_index_xy, sum);
 			int_index_xy += int_stride_xy;
 		}
@@ -165,10 +162,8 @@ __kernel void convolution_image_rgba(read_only image2d_t image, read_only image2
 		}
 	}
 }
-__kernel void convolution_image_with_local_memory_rgba(read_only image2d_t image, read_only image2d_t  kernel_convolution, write_only image2d_t  image_write,const int width,const int height, const int width_kernel,const int height_kernel)
+__kernel void convolution_image_float4_rgba(read_only image2d_t image, read_only image2d_t  kernel_convolution, write_only image2d_t  image_write,const int width,const int height, const int width_kernel,const int height_kernel)
 {
-	__local uchar4 matrix_kernel[256];
-	__local uchar4 matrix_image[256];
     const int idx = get_global_id(0);
     const int idy = get_global_id(1);
     const int stride_x = get_global_size(0);
@@ -176,24 +171,21 @@ __kernel void convolution_image_with_local_memory_rgba(read_only image2d_t image
 	const int local_id_xy = get_local_id(0) + get_local_size(0) * get_local_id(1);
 	const int4 part_width_height_kernel = -(int4)(width_kernel >> 1, height_kernel >> 1, 0, 0) ;
 	const float operations = 1.0f/convert_float(height_kernel * width_kernel);
+
 	for (int h = idy; h < height ; h += stride_y){
 		for (int w = idx ; w <  width ; w += stride_x){
 			float4 sum = 0.0f;
 			int4 index_image_kernel = (int4)(w, h, 0, 0 ) + part_width_height_kernel;
-			for (int i = 0; i < height_kernel; i+=16){
-				for (int j = 0; j < width_kernel; j+=16){
-					const int4 _index_image_kernel = index_image_kernel + (int4)(j, i, j, i );
-					matrix_image[local_id_xy] = convert_uchar4(read_imageui(image, _index_image_kernel.s01));
-					matrix_kernel[local_id_xy] = convert_uchar4(read_imageui(kernel_convolution, _index_image_kernel.s23));
-					barrier(CLK_LOCAL_MEM_FENCE);
-					for (int i = 0; i < 256; i++){
-							sum += convert_float4(matrix_image[i]) *  convert_float4(matrix_kernel[i]);
-						
-					}
+			for (int i = 0; i < height_kernel; i++){
+				for (int j = 0; j < width_kernel; j++){
+						const int4 _index_image_kernel = index_image_kernel + (int4)(j, i, j, i );
+						const float4 data_image =  read_imagef(image, _index_image_kernel.s01);
+						const float4 data_kernel =  read_imagef(kernel_convolution, _index_image_kernel.s23);
+						sum += data_image *  data_kernel;						
 				}
 			}
 			sum *= operations;
-			write_imageui(image_write, (int2)(w ,  h), convert_uint4(sum));
+			write_imagef(image_write, (int2)(w ,  h), sum);
 		}
 	}
 }
