@@ -12,7 +12,9 @@ void fractalImageCompression::writeImage(cl_uint2* position_xy, cl_float* _q, cl
 
 	file.close();
 }
-void fractalImageCompression::compress(cl_uint* errors, cl_uchar* image, cl_uint2* position_xy, cl_float* q, cl_uchar* typeFigure, size_t size_domain, size_t size_rank, size_t width, size_t height) {
+void fractalImageCompression::compress(cl_uint2* errors, cl_uchar* image, cl_uint2* position_xy, cl_float* q, cl_uchar* typeFigure, size_t size_domain, size_t size_rank, size_t width, size_t height) {
+	size_t index = 0;
+
 	const int idx = 0;
 	const int idy = 0;
 	const size_t size_div_dom_rank = size_domain / size_rank;
@@ -40,7 +42,8 @@ void fractalImageCompression::compress(cl_uint* errors, cl_uchar* image, cl_uint
 	float best_position_y = 0;
 	int width_without_memory_leak = width - width % size_domain;
 	int height_without_memory_leak = height - height % size_domain;
-#pragma omp parallel for private(best_figure, best_q,best_position_x, best_position_y,disp,medium,mean_2,mean_1 )
+	//#pragma omp parallel for private(best_figure, best_q,best_position_x, best_position_y,disp,medium,mean_2,mean_1 )
+
 	for (int i = idy; i < number_rank_blocks_y; i += 1) {
 		for (int j = idx; j < number_rank_blocks_x; j += 1) {
 			const float start_rank_x = j * size_rank;
@@ -103,30 +106,35 @@ void fractalImageCompression::compress(cl_uint* errors, cl_uchar* image, cl_uint
 			q[index_block] = best_q / size_block;
 			typeFigure[index_block] = best_figure / 4;
 
-			float matrix_00 = transformation_plus_scale[32] * transformation_plus_scale[int(best_figure)] + transformation_plus_scale[32 + 1] * transformation_plus_scale[int(best_figure) + 2];
-			float matrix_01 = transformation_plus_scale[32] * transformation_plus_scale[int(best_figure) + 1] + transformation_plus_scale[32 + 1] * transformation_plus_scale[int(best_figure) + 3];
-			float matrix_10 = transformation_plus_scale[32 + 2] * transformation_plus_scale[int(best_figure)] + transformation_plus_scale[32 + 3] * transformation_plus_scale[int(best_figure) + 2];
-			float matrix_11 = transformation_plus_scale[32 + 2] * transformation_plus_scale[int(best_figure) + 1] + transformation_plus_scale[32 + 3] * transformation_plus_scale[int(best_figure) + 3];
-			for (int b_y = 0; b_y < size_domain; b_y++) {
-				for (int b_x = 0; b_x < size_domain; b_x++) {
-					float x_index = (b_x + 10e-7f);
-					float y_index = (b_y + 10e-7f);
-					float _x_index = x_index * matrix_00 + y_index * matrix_01;
-					float _y_index = x_index * matrix_10 + y_index * matrix_11;
-					_y_index = _y_index < 0 ? (size_rank)+_y_index : _y_index;
-					_x_index = _x_index < 0 ? (size_rank)+_x_index : _x_index;
-					errors[].x = int(_x_index);
-					errors[].y = int(_y_index);
-				}
-			}
+			//float matrix_00 = transformation_plus_scale[32] * transformation_plus_scale[int(best_figure)] + transformation_plus_scale[32 + 1] * transformation_plus_scale[int(best_figure) + 2];
+			//float matrix_01 = transformation_plus_scale[32] * transformation_plus_scale[int(best_figure) + 1] + transformation_plus_scale[32 + 1] * transformation_plus_scale[int(best_figure) + 3];
+			//float matrix_10 = transformation_plus_scale[32 + 2] * transformation_plus_scale[int(best_figure)] + transformation_plus_scale[32 + 3] * transformation_plus_scale[int(best_figure) + 2];
+			//float matrix_11 = transformation_plus_scale[32 + 2] * transformation_plus_scale[int(best_figure) + 1] + transformation_plus_scale[32 + 3] * transformation_plus_scale[int(best_figure) + 3];
+			//for (int b_y = 0; b_y < size_domain; b_y++) {
+			//	for (int b_x = 0; b_x < size_domain; b_x++) {
+			//		float x_index = (b_x + 10e-7f);
+			//		float y_index = (b_y + 10e-7f);
+			//		float _x_index = x_index * matrix_00 + y_index * matrix_01;
+			//		float _y_index = x_index * matrix_10 + y_index * matrix_11;
+			//		_y_index = _y_index < 0 ? (size_rank)+_y_index : _y_index;
+			//		_x_index = _x_index < 0 ? (size_rank)+_x_index : _x_index;
+			//		errors[index].x = int(_x_index);
+			//		errors[index++].y = int(_y_index);
+			////		printf("%u%u ", int(_x_index), int(_y_index));
+			//	}
+			//	//printf("\n");
+			//}
 
 			position_xy[index_block].x = best_position_x / size_domain;
 			position_xy[index_block].y = best_position_y / size_domain;
 		}
 	}
+
+	index = 0;
 }
 
-void fractalImageCompression::decompress(cl_uchar* image, cl_uchar* result_image, cl_uint2* position_xy, cl_float* q, cl_uchar* typeFigure, size_t size_domain, size_t size_rank, size_t width, size_t height) {
+void fractalImageCompression::decompress(cl_uint2* errors, cl_uchar* image, cl_uchar* result_image, cl_uint2* position_xy, cl_float* q, cl_uchar* typeFigure, size_t size_domain, size_t size_rank, size_t width, size_t height) {
+	size_t index = 0;
 	const float transformation_plus_scale[] = {
 		1,0,0,1,
 		0,1,-1,0,
@@ -173,8 +181,6 @@ void fractalImageCompression::decompress(cl_uchar* image, cl_uchar* result_image
 							_x_index = _x_index < 0 ? (size_domain)+_x_index : _x_index;
 							const float data_dom_block = image[index_dom + int(_y_index)* width + int(_x_index)];
 							sum_block_dom += data_dom_block;
-							if (int(_x_index) > 15 || int(_x_index) < 0)
-								printf("%u\n", int(_x_index));
 							//		printf("%u%u ", int(_y_index), int(_x_index));
 						}
 						//		printf("\n");
@@ -190,20 +196,22 @@ void fractalImageCompression::decompress(cl_uchar* image, cl_uchar* result_image
 
 			//for (int b_y = 0; b_y < size_domain; b_y++) {
 			//	for (int b_x = 0; b_x < size_domain; b_x++) {
-			//		float x_index = (b_x  + 10e-7f);
+			//		float x_index = (b_x + 10e-7f);
 			//		float y_index = (b_y + 10e-7f);
 			//		float _x_index = x_index * matrix_00 + y_index * matrix_01;
 			//		float _y_index = x_index * matrix_10 + y_index * matrix_11;
 			//		_y_index = _y_index < 0 ? (size_domain)+_y_index : _y_index;
 			//		_x_index = _x_index < 0 ? (size_domain)+_x_index : _x_index;
-			//		printf("%u%u ", int(_y_index), int(_x_index));
+			//		if (errors[index].x != int(_x_index / 4) || errors[index++].y != int(_y_index / 4)) {
+			//			printf("%u%u%u ", index, int(_x_index / 4) , int(_y_index / 4));
+			//		}
+			//	//	printf("%u%u ", int(_x_index / 4), int(_y_index / 4));
 			//	}
-			//	printf("\n");
+			////	printf("\n");
 			//}
 		}
 	}
 }
-
 void fractalImageCompression::compress_OpenCL(clDevice* device, cl_uchar* image, cl_uint2* position_xy, cl_float* q, cl_uchar* typeFigure, size_t size_domain, size_t size_rank, size_t width, size_t height) {
 }
 
@@ -215,7 +223,7 @@ fractalImageCompression::fractalImageCompression(clDevice* device, cl_uchar4* im
 	cl_uchar* G = (cl_uchar*)malloc(2 * width*height);
 	cl_uchar* B = (cl_uchar*)malloc(2 * width*height);
 
-	cl_uint2* errors = (cl_uint2*)malloc(4 * width*height * sizeof(cl_uint2));
+	cl_uint2* errors = (cl_uint2*)malloc(4 * size_rank * size_rank * width*height * sizeof(cl_uint2));
 
 	cl_uchar* A = (cl_uchar*)malloc(width*height);
 	size_t offset = number_rank_blocks_x * number_rank_blocks_y;
@@ -228,8 +236,8 @@ fractalImageCompression::fractalImageCompression(clDevice* device, cl_uchar4* im
 		B[i] = image[i].s2;
 	}
 	compress(errors, R, position_xy, shift, typeFigure, size_domain, size_rank, width, height);
-	compress(errors + width * height , G, position_xy + offset, shift + offset, typeFigure + offset, size_domain, size_rank, width, height);
-	compress(errors + width * height * 2, B, position_xy + offset * 2, shift + offset * 2, typeFigure + offset * 2, size_domain, size_rank, width, height);
+	compress(errors + size_rank * size_rank * width*height, G, position_xy + offset, shift + offset, typeFigure + offset, size_domain, size_rank, width, height);
+	compress(errors + size_rank * size_rank * width*height * 2, B, position_xy + offset * 2, shift + offset * 2, typeFigure + offset * 2, size_domain, size_rank, width, height);
 	for (size_t i = 0; i < width*height; i++) {
 		R[i] = 0;
 		G[i] = 0;
@@ -237,10 +245,10 @@ fractalImageCompression::fractalImageCompression(clDevice* device, cl_uchar4* im
 	}
 	writeImage(position_xy, shift, typeFigure, size_domain, size_rank, "output.txt", width, height * 3);
 	int i = 0;
-	for (; i < 15; i++) {
-		decompress(R + (i % 2)* width*height, R + ((i % 2) ^ 1)* width*height, position_xy, shift, typeFigure, size_domain, size_rank, width, height);
-		decompress(G + (i % 2)* width*height, G + ((i % 2) ^ 1)* width*height, position_xy + offset, shift + offset, typeFigure + offset, size_domain, size_rank, width, height);
-		decompress(B + (i % 2)* width*height, B + ((i % 2) ^ 1)* width*height, position_xy + offset * 2, shift + offset * 2, typeFigure + offset * 2, size_domain, size_rank, width, height);
+	for (; i < 35; i++) {
+		decompress(errors + size_rank * size_rank * width*height * 0, R + (i % 2)* width*height, R + ((i % 2) ^ 1)* width*height, position_xy, shift, typeFigure, size_domain, size_rank, width, height);
+		decompress(errors + size_rank * size_rank * width*height * 1, G + (i % 2)* width*height, G + ((i % 2) ^ 1)* width*height, position_xy + offset, shift + offset, typeFigure + offset, size_domain, size_rank, width, height);
+		decompress(errors + size_rank * size_rank * width*height * 2, B + (i % 2)* width*height, B + ((i % 2) ^ 1)* width*height, position_xy + offset * 2, shift + offset * 2, typeFigure + offset * 2, size_domain, size_rank, width, height);
 	}
 	cl_uchar* ptr_R = R + ((i % 2))* width*height;
 	cl_uchar* ptr_G = G + ((i % 2))* width*height;
@@ -257,6 +265,7 @@ fractalImageCompression::fractalImageCompression(clDevice* device, cl_uchar4* im
 	free(position_xy);
 	free(shift);
 	free(typeFigure);
+	free(errors);
 }
 
 fractalImageCompression::~fractalImageCompression()
