@@ -303,18 +303,18 @@ InverseFilter::InverseFilter(clDevice* device, cl_uchar4* image, size_t width, s
 		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
 		device->callOpenclFunction(fourier_transform_float4_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
 	}
-	getMeanOrMax(real_image_gpu, max_re_image_gpu, width, height, false);
+	/*getMeanOrMax(real_image_gpu, max_re_image_gpu, width, height, false);
 	getMeanOrMax(imagine_image_gpu, max_im_image_gpu, width, height, false);
-
+*/
 	{
 		cl_uint indices[] = { kernel_gpu, real_kernel_gpu, imagine_kernel_gpu };
 		cl_uint indices_args[] = { width, height };
 		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
 		device->callOpenclFunction(fourier_transform_float4_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
 	}
-	getMeanOrMax(real_kernel_gpu, max_re_kernel_gpu, width, height, false);
-	getMeanOrMax(imagine_kernel_gpu, max_im_kernel_gpu, width, height, false);
-	{
+	//getMeanOrMax(real_kernel_gpu, max_re_kernel_gpu, width, height, false);
+	//getMeanOrMax(imagine_kernel_gpu, max_im_kernel_gpu, width, height, false);
+	/*{
 		cl_uint indices[] = { real_image_gpu, max_re_image_gpu, real_image_gpu };
 		cl_uint indices_args[] = { width, height };
 		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
@@ -326,20 +326,20 @@ InverseFilter::InverseFilter(clDevice* device, cl_uchar4* image, size_t width, s
 		cl_uint indices_args[] = { width, height };
 		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
 		device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
-	}
-	{
-		cl_uint indices[] = { real_kernel_gpu, max_re_kernel_gpu, real_kernel_gpu };
-		cl_uint indices_args[] = { width, height };
-		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
-		device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
-	}
+	}*/
+	//{
+	//	cl_uint indices[] = { real_kernel_gpu, max_re_kernel_gpu, real_kernel_gpu };
+	//	cl_uint indices_args[] = { width, height };
+	//	cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
+	//	device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
+	//}
 
-	{
-		cl_uint indices[] = { imagine_kernel_gpu, max_im_kernel_gpu, imagine_kernel_gpu };
-		cl_uint indices_args[] = { width, height };
-		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
-		device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
-	}
+	//{
+	//	cl_uint indices[] = { imagine_kernel_gpu, max_im_kernel_gpu, imagine_kernel_gpu };
+	//	cl_uint indices_args[] = { width, height };
+	//	cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
+	//	device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
+	//}
 
 	{
 		cl_uint indices[] = { real_image_gpu, real_kernel_gpu, real_image_gpu };
@@ -353,22 +353,21 @@ InverseFilter::InverseFilter(clDevice* device, cl_uchar4* image, size_t width, s
 		cl_uint indices_args[] = { width, height };
 		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
 		device->callOpenclFunction(div_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
-
 	}
-	getMeanOrMax(real_image_gpu, max_re_image_gpu, width, height, false);
-	getMeanOrMax(imagine_image_gpu, max_im_image_gpu, width, height, false);
-	{
-		cl_uint indices[] = { imagine_image_gpu,max_im_image_gpu , imagine_image_gpu };
-		cl_uint indices_args[] = { width, height };
-		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
-		device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
-	}
-	{
-		cl_uint indices[] = { real_image_gpu, max_re_image_gpu, real_image_gpu };
-		cl_uint indices_args[] = { width, height };
-		cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
-		device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
-	}
+	//getMeanOrMax(real_image_gpu, max_re_image_gpu, width, height, false);
+	//getMeanOrMax(imagine_image_gpu, max_im_image_gpu, width, height, false);
+	//{
+	//	cl_uint indices[] = { imagine_image_gpu,max_im_image_gpu , imagine_image_gpu };
+	//	cl_uint indices_args[] = { width, height };
+	//	cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
+	//	device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
+	//}
+	//{
+	//	cl_uint indices[] = { real_image_gpu, max_re_image_gpu, real_image_gpu };
+	//	cl_uint indices_args[] = { width, height };
+	//	cl_int length_args[] = { sizeof(cl_uint), sizeof(cl_uint) };
+	//	device->callOpenclFunction(div_const_images_kernel_index, indices, (cl_char*)indices_args, length_args, 3, 2);
+	//}
 	//{
 	//	cl_uint indices[] = { norm_Re_image_gpu, norm_Re_result_gpu, real_image_gpu };
 	//	cl_uint indices_args[] = { width, height };

@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <corecrt_memcpy_s.h>
 #include <new>
-//#pragma comment(lib, "x86_64/OpenCL.lib")
-#pragma comment(lib, "OpenCL.lib")
+#pragma comment(lib, "x86_64/OpenCL.lib")
+//#pragma comment(lib, "OpenCL.lib")
 #pragma warning(disable:4996)
 
 

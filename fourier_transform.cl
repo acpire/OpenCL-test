@@ -105,12 +105,12 @@ __kernel void div_fourier_image_rgba_image(read_only image2d_t image_read_Re, re
 			float4 Re_data_kernel = read_imagef(kernel_read_Re, (int2)(j, i));
 			float4 Im_data_kernel = read_imagef(kernel_read_Im, (int2)(j, i));
 			
-			float4 Re_new_image = Re_data_image / Re_data_kernel;
-			float4 Im_new_image = Im_data_image / Im_data_kernel;
-			//const float4 div = 1.0f / (Re_data_kernel * Re_data_kernel + Im_data_kernel * Im_data_kernel );
+			//float4 Re_new_image = Re_data_image / Re_data_kernel;
+			//float4 Im_new_image = Im_data_image / Im_data_kernel;
+			const float4 div = 1.0f / (Re_data_kernel * Re_data_kernel + Im_data_kernel * Im_data_kernel );
 			//const float4 div  = 1.0f / 500.0f;
-			//float4 Re_new_image = (Re_data_image * Re_data_kernel + Im_data_image * Im_data_kernel) * div;
-			//float4 Im_new_image = (Im_data_image * Re_data_kernel - Re_data_image * Im_data_kernel) * div;
+			float4 Re_new_image = (Re_data_image * Re_data_kernel + Im_data_image * Im_data_kernel) * div;
+			float4 Im_new_image = (Im_data_image * Re_data_kernel - Re_data_image * Im_data_kernel) * div;
 			write_imagef(image_write_Re, (int2)(j ,  i), Re_new_image );
 			write_imagef(image_write_Im, (int2)(j ,  i), Im_new_image );
 			
